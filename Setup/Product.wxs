@@ -38,7 +38,6 @@
 					<File Id="CatspawPDB" Source="$(var.Catspaw.TargetDir)$(var.Catspaw.TargetName).pdb" Vital="no"/>
 				<?endif ?>
         <fw:FirewallException Id="Exception" Name="[ProductName]" Port="33000" Protocol="tcp" Description="Api server for [ProductName]" Profile="private" Scope="localSubnet"/>
-        <RemoveFile Id="RemoveCatspawLog" Name="*.log" On="uninstall" />
       </Component>
       <!--Application configuration file-->
       <Component Id="ApplicationConfig" Guid="9F7F67F1-05BD-4487-87E3-13FF17C198C4">

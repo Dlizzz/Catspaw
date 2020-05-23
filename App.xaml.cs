@@ -139,7 +139,7 @@ namespace Catspaw
             // Initialize application logger with log file in local AppData path for non roaming user
             // and String sink to bind to TextLog
             LogText = new StringSink(" - {Message:lj}{NewLine}");
-            LogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "catspaw.log");
+            LogFile = Path.Combine(System.Windows.Forms.Application.LocalUserAppDataPath, "catspaw.log");
             // Configure logger with file, debug and bindablelog sinks
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
