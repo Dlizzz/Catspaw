@@ -1,0 +1,24 @@
+[Unit]
+Description=IFTTT Proxy service
+After=network-online.target
+ 
+[Service]
+StandardOutput=file:/var/log/ifttt_proxy.log
+StandardError=inherit
+
+Environment=TARGET=04:d4:c4:4e:e2:27
+Environment=PORT=33000
+Environment=SERVER=%H
+
+User=ifttt
+Group=ifttt
+
+ExecStart=/usr/bin/python3 /usr/local/bin/ifttt_proxy.py -t ${TARGET} -p ${PORT}
+ExecStop=/usr/bin/curl http://${SERVER}:${PORT}/ifttt_proxy/api/1.0/shutdown_proxy
+
+Type=notify
+Restart=on-failure
+RestartSec=10
+ 
+[Install]
+WantedBy=multi-user.target

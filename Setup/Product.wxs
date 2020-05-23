@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <Product Id="39512FA7-D92E-4C6D-83A0-0AF9BB9C4B00" Name="$(var.Catspaw.TargetName)" Language="1033" Version="!(bind.fileVersion.CatspawEXE)" Manufacturer="Cats Cie" UpgradeCode="6726DDB9-F193-45FD-9C95-8595A6F60DE0">
+		<Package Id="*" Keywords="Installer" Description="$(var.Catspaw.TargetName) application installer" Comments="$(var.Catspaw.TargetName) is a registered trademark of Cats Cie." Manufacturer="Cats Cie" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of $(var.Catspaw.TargetName) is already installed." />
+		<MediaTemplate EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="$(var.Catspaw.TargetName)" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+    <!--
+    <util:CloseApplication Id="CloseCatspaw" Target="$(var.Catspaw.TargetFileName)" PromptToContinue="yes" Description="Need to close [ProductName] before upgrading." ElevatedEndSessionMessage="yes" RebootPrompt="no" TerminateProcess="1"/>
+    <InstallExecuteSequence>
+      <Custom Action="WixCloseApplications" Before="InstallValidate" />
+    </InstallExecuteSequence>
+    -->
+  </Product>
+  
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="CatsCieFolder" Name="Cats Cie" >
+          <Directory Id="INSTALLFOLDER" Name="$(var.Catspaw.TargetName)"/>
+        </Directory>
+      </Directory>
+		</Directory>
+	</Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!--Main application file with firewall exception-->
+      <Component Id="Application" Guid="9F357C7F-7F8F-403B-AFB0-DBFDC1DF8E67">
+        <File Id="CatspawEXE" Source="$(var.Catspaw.TargetPath)" Vital="yes" KeyPath="yes"/>
+				<?if $(var.Catspaw.Configuration) = "Debug" ?>
+					<File Id="CatspawPDB" Source="$(var.Catspaw.TargetDir)$(var.Catspaw.TargetName).pdb" Vital="no"/>
+				<?endif ?>
+        <fw:FirewallException Id="Exception" Name="[ProductName]" Port="33000" Protocol="tcp" Description="Api server for [ProductName]" Profile="private" Scope="localSubnet"/>
+        <RemoveFile Id="RemoveCatspawLog" Name="*.log" On="uninstall" />
+      </Component>
+      <!--Application configuration file-->
+      <Component Id="ApplicationConfig" Guid="9F7F67F1-05BD-4487-87E3-13FF17C198C4">
+        <File Id="CatspawConfig" Source="$(var.Catspaw.TargetDir)$(var.Catspaw.TargetName).exe.config" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <!--Libraries dlls-->
+      <Component Id="Cec" Guid="68C7AD5D-F197-4D86-B37C-9F1BBA29E267">
+        <File Id="CecDLL" Source="$(var.Catspaw.TargetDir)cec.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="LibCecSharp" Guid="9F5A791E-33C8-4207-9BDD-C2643530E548">
+        <File Id="LibCecSharpDLL" Source="$(var.Catspaw.TargetDir)LibCecSharp.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="Nancy" Guid="EE90186A-D974-4056-AC44-B7832FC35DAB">
+        <File Id="NancyDLL" Source="$(var.Catspaw.TargetDir)Nancy.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="NancyHostingSelf" Guid="45D4CF3F-D62D-4B8C-8C11-C9E3FEC12706">
+        <File Id="NancyHostingSelfDLL" Source="$(var.Catspaw.TargetDir)Nancy.Hosting.Self.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="Serilog" Guid="521492F8-6373-4687-8B81-4915B774CE44">
+        <File Id="SerilogDLL" Source="$(var.Catspaw.TargetDir)Serilog.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SerilogFileSink" Guid="D7BC14E3-6D74-4665-BC48-7AB605251475">
+        <File Id="SerilogFileSinkDLL" Source="$(var.Catspaw.TargetDir)Serilog.Sinks.File.dll" Vital="yes" KeyPath="yes"/>
+        <?if $(var.Catspaw.Configuration) = "Debug" ?>
+          <File Id="SerilogFileSinkPDB" Source="$(var.Catspaw.TargetDir)Serilog.Sinks.File.pdb" Vital="no"/>
+        <?endif ?>
+      </Component>
+      <!--Uninstaller registry key-->
+      <Component Id="INSTALLFOLDER" Guid="E8040F0A-A438-4BC2-BEF8-35E9A40B4998">
+        <RemoveFolder Id='INSTALLFOLDER' On='uninstall' />
+        <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+      </Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>
