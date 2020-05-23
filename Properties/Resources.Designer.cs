@@ -8,10 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Catspaw.Properties
-{
-
-
+namespace Catspaw.Properties {
+    using System;
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -19,52 +19,180 @@ namespace Catspaw.Properties
     // à l'aide d'un outil, tel que ResGen ou Visual Studio.
     // Pour ajouter ou supprimer un membre, modifiez votre fichier .ResX, puis réexécutez ResGen
     // avec l'option /str ou régénérez votre projet VS.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources
-    {
-
+    internal class Resources {
+        
         private static global::System.Resources.ResourceManager resourceMan;
-
+        
         private static global::System.Globalization.CultureInfo resourceCulture;
-
+        
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources()
-        {
+        internal Resources() {
         }
-
+        
         /// <summary>
         ///   Retourne l'instance ResourceManager mise en cache utilisée par cette classe.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager
-        {
-            get
-            {
-                if ((resourceMan == null))
-                {
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Catspaw.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
-
+        
         /// <summary>
         ///   Remplace la propriété CurrentUICulture du thread actuel pour toutes
         ///   les recherches de ressources à l'aide de cette classe de ressource fortement typée.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture
-        {
-            get
-            {
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
                 return resourceCulture;
             }
-            set
-            {
+            set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Icon semblable à (Icône).
+        /// </summary>
+        internal static System.Drawing.Icon catspaw_128x128 {
+            get {
+                object obj = ResourceManager.GetObject("catspaw_128x128", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à AVR communication error..
+        /// </summary>
+        internal static string ErrorCommunicationAvr {
+            get {
+                return ResourceManager.GetString("ErrorCommunicationAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unable to connect to Avr.
+        /// </summary>
+        internal static string ErrorConnectionAvr {
+            get {
+                return ResourceManager.GetString("ErrorConnectionAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Can&apos;t get Avr IP address.
+        /// </summary>
+        internal static string ErrorIPAvr {
+            get {
+                return ResourceManager.GetString("ErrorIPAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Network timeout..
+        /// </summary>
+        internal static string ErrorNetworkTimeOutAvr {
+            get {
+                return ResourceManager.GetString("ErrorNetworkTimeOutAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unable to initialize Cec bus.
+        /// </summary>
+        internal static string ErrorNoCecBus {
+            get {
+                return ResourceManager.GetString("ErrorNoCecBus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unable to get Cec bus controller.
+        /// </summary>
+        internal static string ErrorNoCecController {
+            get {
+                return ResourceManager.GetString("ErrorNoCecController", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unable to connect to Cec bus controller.
+        /// </summary>
+        internal static string ErrorNoCecControllerConnection {
+            get {
+                return ResourceManager.GetString("ErrorNoCecControllerConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Power off failed. Avr status unknown.
+        /// </summary>
+        internal static string ErrorPowerOffAvr {
+            get {
+                return ResourceManager.GetString("ErrorPowerOffAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unexpected response from Avt.
+        /// </summary>
+        internal static string ErrorResponseAvr {
+            get {
+                return ResourceManager.GetString("ErrorResponseAvr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Catspaw.
+        /// </summary>
+        internal static string StrApiServerRoot {
+            get {
+                return ResourceManager.GetString("StrApiServerRoot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à 1.0.
+        /// </summary>
+        internal static string StrApiVersion {
+            get {
+                return ResourceManager.GetString("StrApiVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à CEC Catspaw.
+        /// </summary>
+        internal static string StrCecDeviceName {
+            get {
+                return ResourceManager.GetString("StrCecDeviceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Exit.
+        /// </summary>
+        internal static string StrContextMenuExit {
+            get {
+                return ResourceManager.GetString("StrContextMenuExit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Show Catspaw....
+        /// </summary>
+        internal static string StrContextMenuShowWindow {
+            get {
+                return ResourceManager.GetString("StrContextMenuShowWindow", resourceCulture);
             }
         }
     }

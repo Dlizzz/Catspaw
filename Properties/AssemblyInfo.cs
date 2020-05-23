@@ -8,12 +8,12 @@ using System.Windows;
 // l'ensemble d'attributs suivant. Pour modifier les informations
 // associées à un assembly.
 [assembly: AssemblyTitle("Catspaw")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A .Net Framework C# application to automate the Catsnet HTPC")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Cats Cie")]
 [assembly: AssemblyProduct("Catspaw")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCopyright("Copyright ©  2020 - Cats Cie")]
+[assembly: AssemblyTrademark("Cats Cie")]
 [assembly: AssemblyCulture("")]
 
 // L'affectation de la valeur false à ComVisible rend les types invisibles dans cet assembly
@@ -51,5 +51,6 @@ using System.Windows;
 // Vous pouvez spécifier toutes les valeurs ou indiquer les numéros de build et de révision par défaut
 // en utilisant '*', comme indiqué ci-dessous :
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.1.0.1")]
+[assembly: AssemblyFileVersion("2.1.0.1")]
+[assembly: NeutralResourcesLanguage("en-US")]
