@@ -22,7 +22,7 @@ import sys
 import os
 import argparse
 import logging
-import ptvsd
+import debugpy
 import requests
 from pathlib import Path
 from flask import Flask, request, Response, abort
@@ -199,6 +199,6 @@ def main():
 # Module entry point with remote debug
 if __name__ == "__main__":
     if os.getenv("PYTHON_DEBUG", default="False") == "True":
-        ptvsd.enable_attach(address=("0.0.0.0", 5678))
-        ptvsd.wait_for_attach()
+        debugpy.listen(('0.0.0.0', 5678))
+        debugpy.wait_for_client()  # blocks execution until client is attached
     main()
