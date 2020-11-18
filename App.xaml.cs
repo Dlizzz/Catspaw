@@ -36,8 +36,6 @@ namespace Catspaw
     public partial class App : Application, IDisposable
     {
         private System.Windows.Forms.NotifyIcon notifyIcon;
-        private Avr pioneerAvr;
-        private Tv samsungTv;
         private ApiServer apiServer;
         private Mutex CatspawInstance;
 
@@ -71,14 +69,14 @@ namespace Catspaw
             // Initialize Pioneer AVR
             try
             {
-                pioneerAvr = new Avr(Settings.Default.AvrHostname, Settings.Default.AvrPort);
+                PioneerAvr = new Avr(Settings.Default.AvrHostname, Settings.Default.AvrPort);
             }
             catch (AvrException err)
             {
                 Log.Error(Catspaw.Properties.Resources.ErrorConnectionAvr, err);
                 Log.Information("Oups! Sorry we can't connect to the Audio Video Reciever :-(");
             }
-            if (pioneerAvr != null)
+            if (PioneerAvr != null)
             {
                 Log.Debug("Adding Pioneer Avr component");
                 Log.Information("Cool! We've just added the Pioneer Audio Video Reciever as an HTPC component.");
@@ -87,14 +85,14 @@ namespace Catspaw
             //Initialize Samsung TV
             try
             {
-                samsungTv = new Tv();
+                SamsungTv = new Tv();
             }
             catch (CecException err)
             {
                 Log.Debug(Catspaw.Properties.Resources.ErrorNoCecController, err);
                 Log.Information("Oups! Sorry we can't connect the CeC bus controller :-(");
             }
-            if (samsungTv != null)
+            if (SamsungTv != null)
             {
                 Log.Debug("Adding Pioneer Tv component");
                 Log.Information("Even cooler! We've just added the Samsung TV as an HTPC component.");
@@ -132,6 +130,16 @@ namespace Catspaw
         /// Logfile of the application
         /// </summary>
         public string LogFile { get; private set; }
+
+        /// <summary>
+        /// System Avr
+        /// </summary>
+        public Avr PioneerAvr { get; private set; }
+
+        /// <summary>
+        /// System Tv
+        /// </summary>
+        public Tv SamsungTv { get; private set; }
 
         // Initialize log file
         private void LogInit()
@@ -208,7 +216,7 @@ namespace Catspaw
                     // If we have a Tv, try to power it on. Report if it fails.
                     try
                     {
-                        samsungTv?.PowerOn();
+                        SamsungTv?.PowerOn();
                     }
                     catch (CecException err)
                     {
@@ -217,7 +225,7 @@ namespace Catspaw
                     // If we have an Avr, try to power it on. Report if it fails.
                     try
                     {
-                        pioneerAvr?.PowerOn();
+                        PioneerAvr?.PowerOn();
                     }
                     catch (AvrException err)
                     {
@@ -232,7 +240,7 @@ namespace Catspaw
                     // If we have a Tv, try to power it off. Report if it fails.
                     try
                     {
-                        samsungTv?.PowerOff();
+                        SamsungTv?.PowerOff();
                     }
                     catch (CecException err)
                     {
@@ -241,7 +249,7 @@ namespace Catspaw
                     // If we have an Avr, try to power it off. Report if it fails.
                     try
                     {
-                        pioneerAvr?.PowerOff();
+                        PioneerAvr?.PowerOff();
                     }
                     catch (AvrException err)
                     {
@@ -269,8 +277,8 @@ namespace Catspaw
             {
                 if (disposing)
                 {
-                    samsungTv?.Dispose();
-                    pioneerAvr?.Dispose();
+                    SamsungTv?.Dispose();
+                    PioneerAvr?.Dispose();
                     apiServer?.Dispose();
                     notifyIcon?.Dispose();
                     Log.CloseAndFlush();

@@ -11,7 +11,10 @@ namespace Catspaw.Pioneer
         { 
             PowerState,
             PowerOn,
-            PowerOff
+            PowerOff,
+            VolumeUp,
+            VolumeDown,
+            MuteOnOff
         }
 
         // Initialize the actions dictionnary for the avr
@@ -19,8 +22,35 @@ namespace Catspaw.Pioneer
         {
             { AvrCommands.PowerState, ("?P", new Regex("PWR([0-1])", regexOptions)) },
             { AvrCommands.PowerOn,    ("PO", new Regex("PWR0", regexOptions)) },
-            { AvrCommands.PowerOff,   ("PF", new Regex("PWR1", regexOptions)) }
+            { AvrCommands.PowerOff,   ("PF", new Regex("PWR1", regexOptions)) },
+            { AvrCommands.VolumeUp,   ("VU", new Regex(@"VOL(\d{3})", regexOptions)) },
+            { AvrCommands.VolumeDown, ("VD", new Regex(@"VOL(\d{3})", regexOptions)) },
+            { AvrCommands.MuteOnOff,  ("MZ", new Regex("", regexOptions)) }
         };
+
+        /// <summary>
+        /// Mute switch on/off. Response is not checked for performance reasons.
+        /// Avr is considered connected
+        /// </summary>
+        /// <exception cref="AvrException">
+        /// Communication error with Avr.</exception>
+        public void MuteOnOff() => Send(commands[AvrCommands.MuteOnOff].command);
+
+        /// <summary>
+        /// Decrease volume by 0.5db. Response is not checked for performance reasons.
+        /// Avr is considered connected
+        /// </summary>
+        /// <exception cref="AvrException">
+        /// Communication error with Avr.</exception>
+        public void VolumeDown() => Send(commands[AvrCommands.VolumeDown].command);
+
+        /// <summary>
+        /// Increase volume by 0.5db. Response is not checked for performance reasons.
+        /// Avr is considered connected
+        /// </summary>
+        /// <exception cref="AvrException">
+        /// Communication error with Avr.</exception>
+        public void VolumeUp() => Send(commands[AvrCommands.VolumeUp].command);
 
         /// <summary>
         /// Power off Avr. Response is not checked for performance reasons.
