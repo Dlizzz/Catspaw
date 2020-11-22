@@ -5,20 +5,27 @@ using System.Net.Sockets;
 using System.IO;
 using System.Threading;
 using System.Text;
-using System.Security;
 using Catspaw.Properties;
 using Serilog;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace Catspaw.Pioneer
 {
     /// <summary>
-    /// Implement the Avr
+    /// Implement the Avr as a Dependency object. Volume is a read-only dependency property
     /// </summary>
-    public partial class Avr : IDisposable
+    public partial class Avr : DependencyObject, IDisposable
     {
+        // Volume popup
+        private VolumePopup volumePopup;
+        // 2 seconds timer for volume popup
+        private readonly DispatcherTimer volumePopupTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(2) };
+
         // Manually reset event to track avr availability status
         private readonly ManualResetEvent networkUp;
         // Avr Ip host 
@@ -58,6 +65,44 @@ namespace Catspaw.Pioneer
             tokenSource = new CancellationTokenSource();
         }
 
+        /// <summary>
+        /// Initialize Volume popup after Avr instance creation to allow Volume binding
+        /// </summary>
+        public void InitVolume()
+        {
+            // Initialize volume popup with current volume
+            VolumeGet();
+            volumePopup = new VolumePopup();
+            volumePopupTimer.Tick += new EventHandler(VolumePopupTimerCallback);
+        }
+
+        // The read-only dependency property key associated to Volume
+        private static readonly DependencyPropertyKey VolumePropertyKey =
+            DependencyProperty.RegisterReadOnly(
+                nameof(Volume),
+                typeof(string), typeof(Avr),
+                new FrameworkPropertyMetadata("-.- dB"));
+
+        /// <summary>
+        /// The read-only dependency property associated to Volume
+        /// </summary>
+        public static readonly DependencyProperty VolumeProperty = VolumePropertyKey.DependencyProperty;
+
+        /// <summary>
+        /// Set or get the text of the Sink. The given text is always append to the end of the sink.
+        /// Always goes through application dispatcher to get / set the property key as it can be set by 
+        /// other thread thaun UI thread
+        /// </summary>
+        public string Volume
+        {
+            get => Application.Current.Dispatcher.Invoke(new Func<string>(() => 
+                (string)GetValue(VolumeProperty)
+            ));
+            private set => Application.Current.Dispatcher.Invoke(new Action(() => {
+                SetValue(VolumePropertyKey, value);
+            }));
+        }
+
         /// <summary>Get the hostname of the AVR</summary>
         public string Hostname { get; }
         /// <summary>Get the TCP port of the AVR</summary>
@@ -95,6 +140,9 @@ namespace Catspaw.Pioneer
                 Log.Debug("Execute command: " + command);
                 avrWriter.WriteLine(command);
                 response = avrReader.ReadLine();
+                // Get rid of FL response. Data are on second line
+                if (response.Substring(0,2) == "FL")
+                    response = avrReader.ReadLine();
             }
             catch (AggregateException e)
             {
@@ -187,8 +235,32 @@ namespace Catspaw.Pioneer
             if (e.IsAvailable) networkUp.Set();
             else networkUp.Reset();
         }
-        #endregion
 
+        // Show and activate the volume popup
+        // Assume that the function is called from the api server thread
+        // Must go through Application dispatcher to access UI thread
+        // Timer is also executed by the application dispatcher
+        private void VolumePopupShow()
+        {
+            if (volumePopup is null) return;
+
+            Application.Current.Dispatcher.Invoke(new Action(() => {
+                // Stop existing timer if running to restart timer count
+                volumePopupTimer.Stop();
+                // Show popup
+                volumePopup.IsOpen = true;
+                // Start timer
+                volumePopupTimer.Start();
+            }));
+        }
+
+        // The callback function called at each timler tick
+        private void VolumePopupTimerCallback(object sender, EventArgs e)
+        {
+            volumePopup.IsOpen = false;
+            volumePopupTimer.Stop();
+        }
+        #endregion
         #region IDisposable Support
         // Avoid redundant calls
         private bool disposedValue = false;

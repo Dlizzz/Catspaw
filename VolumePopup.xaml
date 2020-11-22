@@ -1,0 +1,33 @@
+﻿<Popup
+    x:Class="Catspaw.VolumePopup"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Catspaw"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="PopVolume"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    d:DesignHeight="200"
+    d:DesignWidth="400"
+    AllowsTransparency="True"
+    HorizontalOffset="100"
+    Placement="Absolute"
+    PopupAnimation="Fade"
+    ScrollViewer.VerticalScrollBarVisibility="Disabled"
+    VerticalOffset="56"
+    mc:Ignorable="d">
+    <Label
+        x:Name="LblVolume"
+        Margin="0"
+        Padding="0"
+        HorizontalAlignment="Left"
+        VerticalAlignment="Top"
+        HorizontalContentAlignment="Center"
+        VerticalContentAlignment="Center"
+        Content="{Binding Volume}"
+        FontFamily="Arial Rounded MT Bold"
+        FontSize="108"
+        Foreground="#FF09EC28"
+        ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+</Popup>
