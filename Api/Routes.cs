@@ -1,7 +1,9 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Globalization;
 using Nancy;
 using Serilog;
 using Catspaw.Properties;
@@ -19,7 +21,7 @@ namespace Catspaw.Api
         {
             Get("/version", _ => Assembly.GetExecutingAssembly().FullName);
             Get("/poweroff", PowerOff);
-            Get("/volume/{action}", Volume);
+            Get(@"^(?:vol(?<ratio>r?)(?<action>[ud])(?<amount>[\d]{0,2}))$", VolumeSet);
             Get("/mute", MuteOnOff);
         }
 
@@ -34,33 +36,48 @@ namespace Catspaw.Api
             return "Putting system in suspend mode";
         }
 
-        private dynamic Volume(dynamic args)
+        private dynamic VolumeSet(dynamic args)
         {
+            bool ratio = (args.ratio == "r");
             string action = args.action;
+            // If no amount given, could be 0% or standard up or down (0.5 dB)
+            double amount = (args.amount == "") ? 0.0 : args.amount.ToDouble(CultureInfo.InvariantCulture);
 
-            Log.Debug("Api: Volume");
+            string message;
+
+            if (ratio)
+            {
+                message = action switch
+                {
+                    "u" => "Volume up by " + amount.ToString(CultureInfo.InvariantCulture) + "%",
+                    "d" => "Volume down by " + amount.ToString(CultureInfo.InvariantCulture) + "%",
+                    _ => "No action",
+                };
+            }
+            else
+            {
+                var strAmount = (args.amount == "") ? "0.5" : amount.ToString(CultureInfo.InvariantCulture);
+
+                message = action switch
+                {
+                    "u" => "Volume up by " + strAmount + " dB",
+                    "d" => "Volume down by " + strAmount + " dB",
+                    _ => "No action",
+                };
+            }
 
             // Call Avr command
+            Log.Debug("Api: " + message);
             try
             {
-                switch (action)
-                {
-                    case "up":
-                        ((App)Application.Current).PioneerAvr?.VolumeUp();
-                        break;
-                    case "down":
-                        ((App)Application.Current).PioneerAvr?.VolumeDown();
-                        break;
-                    default:
-                        break;
-                }
+                ((App)Application.Current).PioneerAvr?.VolumeSet(action, amount, ratio);
             }
             catch (AvrException err)
             {
-                Log.Debug("Volume " + action + " on AVR failed", err);
+                Log.Debug("Api: " + message + " failed", err);
             }
 
-            return "Volume " + action + " by 0.5 db";
+            return message;
         }
 
         private dynamic MuteOnOff(dynamic args)

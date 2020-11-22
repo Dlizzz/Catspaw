@@ -66,10 +66,11 @@ namespace Catspaw
             // Add the power events handler to the system power events queue
             SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerEventHandler);
 
-            // Initialize Pioneer AVR
+            // Initialize Pioneer AVR with Volume Popup
             try
             {
                 PioneerAvr = new Avr(Settings.Default.AvrHostname, Settings.Default.AvrPort);
+                PioneerAvr.InitVolume();
             }
             catch (AvrException err)
             {
