@@ -145,20 +145,12 @@
     <value>Unable to connect to Cec bus controller</value>
     <comment>CecException message</comment>
   </data>
-  <data name="ErrorConnectionAvr" xml:space="preserve">
-    <value>Unable to connect to Avr</value>
-    <comment>AvrException message</comment>
-  </data>
   <data name="ErrorResponseAvr" xml:space="preserve">
     <value>Unexpected response from Avt</value>
     <comment>AvrException message</comment>
   </data>
   <data name="ErrorPowerOffAvr" xml:space="preserve">
     <value>Power off failed. Avr status unknown</value>
-    <comment>AvrException message</comment>
-  </data>
-  <data name="ErrorIPAvr" xml:space="preserve">
-    <value>Can't get Avr IP address</value>
     <comment>AvrException message</comment>
   </data>
   <data name="StrApiServerRoot" xml:space="preserve">
@@ -173,8 +165,12 @@
     <value>Exit</value>
     <comment>String</comment>
   </data>
-  <data name="StrContextMenuShowWindow" xml:space="preserve">
-    <value>Show Catspaw...</value>
+  <data name="StrContextMenuAbout" xml:space="preserve">
+    <value>About Catspaw...</value>
+    <comment>String</comment>
+  </data>
+  <data name="StrContextMenuLog" xml:space="preserve">
+    <value>Log file...</value>
     <comment>String</comment>
   </data>
 </root>

@@ -28,13 +28,6 @@ namespace Catspaw
         public MainWindow()
         {
             InitializeComponent();
-
-            DataContext = ((App)Application.Current).LogText;
-        }
-
-        private void WinCatspaw_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left) DragMove();
         }
 
         private void CatspawMainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -43,34 +36,6 @@ namespace Catspaw
             var version = (AssemblyFileVersionAttribute)Assembly.GetExecutingAssembly().GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
 
             TxtVersion.Text = copyright.Copyright + " - Version: " + version.Version;
-        }
-
-        private void BtnOk_Click(object sender, RoutedEventArgs e)
-        {
-            Hide();
-        }
-
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
-
-        private void ScrollViewer_MouseEnter(object sender, MouseEventArgs e)
-        {
-            var scrollViewer = sender as ScrollViewer;
-            scrollViewer.VerticalScrollBarVisibility = scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
-        }
-
-        private void ScrollViewer_MouseLeave(object sender, MouseEventArgs e)
-        {
-            var scrollViewer = sender as ScrollViewer;
-            scrollViewer.VerticalScrollBarVisibility = scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
-        }
-
-        private void BtnLog_Click(object sender, RoutedEventArgs e)
-        {
-            var app = Application.Current as App;
-            Process.Start(app.LogFile);
         }
     }
 }

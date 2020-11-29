@@ -11,6 +11,7 @@ using Catspaw.Pioneer;
 using Catspaw.Samsung;
 using Catspaw.Api;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Catspaw
 {
@@ -36,15 +37,16 @@ namespace Catspaw
     public partial class App : Application, IDisposable
     {
         private System.Windows.Forms.NotifyIcon notifyIcon;
+        private readonly DispatcherTimer mainWindowTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(3) };
         private ApiServer apiServer;
-        private Mutex CatspawInstance;
+        private Mutex catspawInstance;
 
         #region Application events
         // Triggered when application starts. Do initialization.
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             // Check if an instance is already runnin by checking a named mutex owned by the first instance            
-            CatspawInstance = new Mutex(true, "CatspawInstance", out bool IsNewInstance);
+            catspawInstance = new Mutex(true, "CatspawInstance", out bool IsNewInstance);
             if (!IsNewInstance)
             {
 #pragma warning disable CA1303 // Ne pas passer de littéraux en paramètres localisés
@@ -57,8 +59,13 @@ namespace Catspaw
             // Initialize application logger with log file in local AppData path for non roaming user
             LogInit();
 
-            // Create main window and add handler for closing
+            // Create main window and add timer for closing
             MainWindow = new MainWindow();
+            mainWindowTimer.Tick += (object sender, EventArgs e) =>
+            {
+                MainWindow.Hide();
+                mainWindowTimer.Stop();
+            };
 
             // Create Notify icon with handler for double click and context menu
             NotifyIconInit();
@@ -69,12 +76,12 @@ namespace Catspaw
             // Initialize Pioneer AVR with Volume Popup
             try
             {
-                PioneerAvr = new Avr(Settings.Default.AvrHostname, Settings.Default.AvrPort);
+                PioneerAvr = new Avr(Settings.Default.AvrHostname);
                 PioneerAvr.InitVolume();
             }
             catch (AvrException err)
             {
-                Log.Error(Catspaw.Properties.Resources.ErrorConnectionAvr, err);
+                Log.Error(Catspaw.Properties.Resources.ErrorCommunicationAvr, err);
                 Log.Information("Oups! Sorry we can't connect to the Audio Video Reciever :-(");
             }
             if (PioneerAvr != null)
@@ -102,16 +109,8 @@ namespace Catspaw
             // Initialize Api server
             apiServer = new ApiServer();
 
-            // Show main window for 5 seconds and hide it
-            // DispatcherTimer setup
-            var timer = new DispatcherTimer() {Interval = TimeSpan.FromSeconds(3)};
-            timer.Tick += (object sender, EventArgs e) =>
-            {
-                if (!MainWindow.IsMouseOver) MainWindow.Hide();
-                timer.Stop();
-            };
+            // Show main window
             MainWindowShow();
-            timer.Start();
         }
 
         // Triggered when the user ends the Windows session by logging off or shutting down the operating system.
@@ -122,11 +121,6 @@ namespace Catspaw
         #endregion
 
         #region Application helpers
-        /// <summary>
-        /// Get the String log sink for binding 
-        /// </summary>
-        public StringSink LogText { get; private set; }
-
         /// <summary>
         /// Logfile of the application
         /// </summary>
@@ -146,8 +140,6 @@ namespace Catspaw
         private void LogInit()
         {
             // Initialize application logger with log file in local AppData path for non roaming user
-            // and String sink to bind to TextLog
-            LogText = new StringSink(" - {Message:lj}{NewLine}");
             LogFile = Path.Combine(System.Windows.Forms.Application.LocalUserAppDataPath, "catspaw.log");
             // Configure logger with file, debug and bindablelog sinks
             Log.Logger = new LoggerConfiguration()
@@ -158,7 +150,6 @@ namespace Catspaw
 #endif
                 .WriteTo.File(LogFile, outputTemplate:
                     "{Timestamp:dd/MM/yyyy@HH:mm:ss} - {Level:u3} - {Message:lj}{NewLine}{Exception}")
-                .WriteTo.Sink(LogText, LogEventLevel.Information)
                 .CreateLogger();
 
             // Report logger is started
@@ -171,29 +162,26 @@ namespace Catspaw
         private void NotifyIconInit()
         {
             // Create the NotifyIcon and add handler for double click
-            notifyIcon = new System.Windows.Forms.NotifyIcon();
-            notifyIcon.Icon = Catspaw.Properties.Resources.catspaw_128x128;
-            notifyIcon.Visible = true;
+            notifyIcon = new System.Windows.Forms.NotifyIcon
+            {
+                Icon = Catspaw.Properties.Resources.catspaw_128x128,
+                Visible = true
+            };
             notifyIcon.DoubleClick += (s, args) => MainWindowShow();
 
             // Create the context menu
             notifyIcon.ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
-            notifyIcon.ContextMenuStrip.Items.Add(Catspaw.Properties.Resources.StrContextMenuShowWindow).Click += (s, e) => MainWindowShow();
+            notifyIcon.ContextMenuStrip.Items.Add(Catspaw.Properties.Resources.StrContextMenuAbout).Click += (s, e) => MainWindowShow();
+            notifyIcon.ContextMenuStrip.Items.Add(Catspaw.Properties.Resources.StrContextMenuLog).Click += (s, e) => Process.Start(LogFile) ;
             notifyIcon.ContextMenuStrip.Items.Add(Catspaw.Properties.Resources.StrContextMenuExit).Click += (s, e) => Shutdown();
         }
 
-        // Show and activate the main window
+        // Show main window with timer to hide it
         private void MainWindowShow()
         {
-            if (MainWindow.IsVisible)
-            {
-                if (MainWindow.WindowState == WindowState.Minimized) MainWindow.WindowState = WindowState.Normal;
-                MainWindow.Activate();
-            }
-            else
-            {
-                MainWindow.Show();
-            }
+            mainWindowTimer.Stop();
+            MainWindow.Show();
+            mainWindowTimer.Start();
         }
 
         // Exit the application and dispose resources
@@ -221,16 +209,16 @@ namespace Catspaw
                     }
                     catch (CecException err)
                     {
-                        Log.Debug("Powering on TV set failed", err);
+                        Log.Error("Powering on TV set failed", err);
                     }
                     // If we have an Avr, try to power it on. Report if it fails.
                     try
                     {
-                        PioneerAvr?.PowerOn();
+                        PioneerAvr?.PowerOnAsync();
                     }
                     catch (AvrException err)
                     {
-                        Log.Debug("Powering on AVR failed", err);
+                        Log.Error("Powering on AVR failed", err);
                     }
                     break;
 
@@ -245,16 +233,16 @@ namespace Catspaw
                     }
                     catch (CecException err)
                     {
-                        Log.Debug("Powering off TV set failed", err);
+                        Log.Error("Powering off TV set failed", err);
                     }
                     // If we have an Avr, try to power it off. Report if it fails.
                     try
                     {
-                        PioneerAvr?.PowerOff();
+                        PioneerAvr?.PowerOffAsync();
                     }
                     catch (AvrException err)
                     {
-                        Log.Debug("Powering off AVR failed", err);
+                        Log.Error("Powering off AVR failed", err);
                     }
                     break;
 
@@ -286,7 +274,7 @@ namespace Catspaw
                     // Because SystemEvents.PowerModeChanged Event is a static event, 
                     // you must detach your event handlers when your application is disposed, or memory leaks will result.
                     SystemEvents.PowerModeChanged -= PowerEventHandler;
-                    CatspawInstance?.Dispose();
+                    catspawInstance?.Dispose();
                 }
                 disposedValue = true;
             }

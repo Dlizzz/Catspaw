@@ -80,24 +80,6 @@ namespace Catspaw.Properties {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Unable to connect to Avr.
-        /// </summary>
-        internal static string ErrorConnectionAvr {
-            get {
-                return ResourceManager.GetString("ErrorConnectionAvr", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Can&apos;t get Avr IP address.
-        /// </summary>
-        internal static string ErrorIPAvr {
-            get {
-                return ResourceManager.GetString("ErrorIPAvr", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Network timeout..
         /// </summary>
         internal static string ErrorNetworkTimeOutAvr {
@@ -179,6 +161,15 @@ namespace Catspaw.Properties {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à About Catspaw....
+        /// </summary>
+        internal static string StrContextMenuAbout {
+            get {
+                return ResourceManager.GetString("StrContextMenuAbout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Exit.
         /// </summary>
         internal static string StrContextMenuExit {
@@ -188,11 +179,11 @@ namespace Catspaw.Properties {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Show Catspaw....
+        ///   Recherche une chaîne localisée semblable à Log file....
         /// </summary>
-        internal static string StrContextMenuShowWindow {
+        internal static string StrContextMenuLog {
             get {
-                return ResourceManager.GetString("StrContextMenuShowWindow", resourceCulture);
+                return ResourceManager.GetString("StrContextMenuLog", resourceCulture);
             }
         }
     }

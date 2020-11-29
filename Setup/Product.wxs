@@ -65,6 +65,34 @@
           <File Id="SerilogFileSinkPDB" Source="$(var.Catspaw.TargetDir)Serilog.Sinks.File.pdb" Vital="no"/>
         <?endif ?>
       </Component>
+      <Component Id="MicrosoftBclAsyncInterfaces" Guid="4708EEE9-9248-4039-AE97-C0B669B9CF1C">
+        <File Id="MicrosoftBclAsyncInterfacesDLL" Source="$(var.Catspaw.TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemBuffers" Guid="09EC94B3-1E21-4E3E-BEF3-23FF77EA0599">
+        <File Id="SystemBuffersDLL" Source="$(var.Catspaw.TargetDir)System.Buffers.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemMemory" Guid="E539FC73-4448-4374-89B3-6AF8C1822C05">
+        <File Id="SystemMemoryDLL" Source="$(var.Catspaw.TargetDir)System.Memory.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemNumericsVectors" Guid="4648B19B-E05D-46A3-9C94-405FA2165C4F">
+        <File Id="SystemNumericsVectorsDLL" Source="$(var.Catspaw.TargetDir)System.Numerics.Vectors.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemRuntimeCompilerServicesUnsafe" Guid="297A51E9-ED62-4319-8D18-279E1869F491">
+        <File Id="SystemRuntimeCompilerServicesUnsafeDLL" Source="$(var.Catspaw.TargetDir)System.Runtime.CompilerServices.Unsafe.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemTextEncodingsWeb" Guid="4FD2B9FB-00E2-46DC-AFAE-E76152254A4F">
+        <File Id="SystemTextEncodingsWebDLL" Source="$(var.Catspaw.TargetDir)System.Text.Encodings.Web.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemTextJson" Guid="8CD3ADD9-FAC8-4CA3-AC85-20059F0E2728">
+        <File Id="SystemTextJsonDLL" Source="$(var.Catspaw.TargetDir)System.Text.Json.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemThreadingTasksExtensions" Guid="F01BCF2E-9D5F-4227-A7E3-42865EC0D918">
+        <File Id="SystemThreadingTasksExtensionsDLL" Source="$(var.Catspaw.TargetDir)System.Threading.Tasks.Extensions.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+      <Component Id="SystemValueTuple" Guid="A5505B08-AFE6-4D88-B076-48F98B5A8C43">
+        <File Id="SystemValueTupleDLL" Source="$(var.Catspaw.TargetDir)System.ValueTuple.dll" Vital="yes" KeyPath="yes"/>
+      </Component>
+
       <!--Uninstaller registry key-->
       <Component Id="INSTALLFOLDER" Guid="E8040F0A-A438-4BC2-BEF8-35E9A40B4998">
         <RemoveFolder Id='INSTALLFOLDER' On='uninstall' />
