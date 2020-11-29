@@ -21,13 +21,13 @@ namespace Catspaw.Api
         {
             Get("/version", _ => Assembly.GetExecutingAssembly().FullName);
             Get("/poweroff", PowerOff);
-            Get(@"^(?:vol(?<ratio>r?)(?<action>[ud])(?<amount>[\d]{0,2}))$", VolumeSet);
-            Get("/mute", MuteOnOff);
+            Get(@"^(?:vol(?<action>[ud]))$", VolumeSetAsync);
+            Get("/mute", MuteOnOffAsync);
         }
 
         private dynamic PowerOff(dynamic args)
         {
-            Log.Debug("Api: PowerOff");
+            Log.Debug("Api: ================== PowerOff ==================");
             Log.Information("I just recieved an external request to go to bed...");
 
             // Run an asynchronous task with some delay to give server time to return
@@ -36,65 +36,44 @@ namespace Catspaw.Api
             return "Putting system in suspend mode";
         }
 
-        private dynamic VolumeSet(dynamic args)
+        private async Task<dynamic> VolumeSetAsync(dynamic args)
         {
-            bool ratio = (args.ratio == "r");
-            string action = args.action;
-            // If no amount given, could be 0% or standard up or down (0.5 dB)
-            double amount = (args.amount == "") ? 0.0 : args.amount.ToDouble(CultureInfo.InvariantCulture);
-
-            string message;
-
-            if (ratio)
+            string message = args.action switch
             {
-                message = action switch
-                {
-                    "u" => "Volume up by " + amount.ToString(CultureInfo.InvariantCulture) + "%",
-                    "d" => "Volume down by " + amount.ToString(CultureInfo.InvariantCulture) + "%",
-                    _ => "No action",
-                };
-            }
-            else
-            {
-                var strAmount = (args.amount == "") ? "0.5" : amount.ToString(CultureInfo.InvariantCulture);
-
-                message = action switch
-                {
-                    "u" => "Volume up by " + strAmount + " dB",
-                    "d" => "Volume down by " + strAmount + " dB",
-                    _ => "No action",
-                };
-            }
+                "u" => "Volume up by 0.5 dB",
+                "d" => "Volume down by 0.5 dB",
+                _ => "No action",
+            };
 
             // Call Avr command
-            Log.Debug("Api: " + message);
+            Log.Debug("Api: ================== " + message + " ==================");
             try
             {
-                ((App)Application.Current).PioneerAvr?.VolumeSet(action, amount, ratio);
+                await (((App)Application.Current).PioneerAvr?.VolumeSetAsync(args.action)).ConfigureAwait(true);
             }
             catch (AvrException err)
             {
-                Log.Debug("Api: " + message + " failed", err);
+                Log.Error("Api: " + message + " failed", err);
             }
 
             return message;
         }
 
-        private dynamic MuteOnOff(dynamic args)
+        private async Task<dynamic> MuteOnOffAsync(dynamic args)
         {
-            Log.Debug("Api: MuteOnOff");
+            Log.Debug("Api: ================== MuteOnOff ==================");
 
             // Call Avr command
             try
             {
-                ((App)Application.Current).PioneerAvr?.MuteOnOff();
+                await (((App)Application.Current).PioneerAvr?.MuteOnOffAsync()).ConfigureAwait(true);
             }
             catch (AvrException err)
             {
-                Log.Debug("Mute switch on AVR failed", err);
+                Log.Error("Mute switch on AVR failed", err);
             }
 
-            return "Switched system mute ";
+            return "Switched system mute";
         }
     }
 }

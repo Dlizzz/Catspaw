@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.IO;
-using System.Threading;
-using System.Text;
-using Catspaw.Properties;
-using Serilog;
-using System.Threading.Tasks;
 using System.Globalization;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using System.Windows.Media;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Serilog;
+using Catspaw.Properties;
 
 namespace Catspaw.Pioneer
 {
@@ -21,34 +20,70 @@ namespace Catspaw.Pioneer
     /// </summary>
     public partial class Avr : DependencyObject, IDisposable
     {
-        // Volume popup
-        private VolumePopup volumePopup;
-        // 2 seconds timer for volume popup
-        private readonly DispatcherTimer volumePopupTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(2) };
+        // Define the class for avr status json deserialization
+#pragma warning disable CA1812
+        private class AvrStatus
+        {
+            // Unknown
+            public int S { get; set; }
+            // Unknown
+            public int B { get; set; }
+            // Zones
+            [JsonPropertyName("Z")]
+            public AvrZoneStatus[] Zones { get; set; }
+            // Unknown
+            public int L { get; set; }
+            // Unknown
+            public int A { get; set; }
+            // Inputs list
+            [JsonPropertyName("IL")]
+            public string[] Inputs { get; set; }
+            // Unknown
+            public string LC { get; set; }
+            // Unknown
+            public int MA { get; set; }
+            // Unknown
+            public string MS { get; set; }
+            // Unknown
+            public int MC { get; set; }
+            // Unknown
+            public int HP { get; set; }
+            // Unknown
+            public int HM { get; set; }
+            // Unknown
+            public int[] DM { get; set; }
+            // Unknown
+            public int H { get; set; }
+        }
+        private class AvrZoneStatus
+        {
+            // 0 is Off, 1 is On
+            [JsonPropertyName("P")]
+            public int Power { get; set; }
+            // 0 to 185 from -80 dB to +12 dB by 0.5 dB
+            [JsonPropertyName("V")]
+            public int VolumeLevel { get; set; }
+            // Mute: 0 is Off, 1 is On
+            [JsonPropertyName("M")]
+            public int Mute { get; set; }
+            // Unknown
+            public int[] I { get; set; }
+            // Unknown
+            public int C { get; set; }
+        }
+#pragma warning restore CA1812
 
-        // Manually reset event to track avr availability status
-        private readonly ManualResetEvent networkUp;
-        // Avr Ip host 
-        private TcpClient avr;
-        private NetworkStream avrStream;
-        private StreamWriter avrWriter;
-        private StreamReader avrReader;
-
-        // Connection management
-        private CancellationTokenSource tokenSource;
-        private Task connection;
+        // Store the status of the avr, updated by UpdateStatus
+        private AvrStatus avrStatus;
 
         /// <summary>
-        /// Create an Avr with the given hostanme and TCP port
+        /// Create an Avr with the given hostanme
         /// </summary>
         /// <param name="hostname">The Avr hostname</param>
-        /// <param name="port">The Avr tcp port (default: 23)</param>
         /// <exception cref="ArgumentNullException">hostname can't be null</exception>
-        /// <exception cref="ArgumentOutOfRangeException">port must be a valid port number</exception>
-        public Avr(string hostname, int port = 23)
+        public Avr(string hostname)
         {
             if (hostname is null) throw new ArgumentNullException(nameof(hostname));
-            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort) throw new ArgumentOutOfRangeException(nameof(port));
 
             // Initialize manual reset networkAvailable event to track network availability status
             // The event is created "signaled" if the network is up at creation time
@@ -57,23 +92,82 @@ namespace Catspaw.Pioneer
             networkUp = new ManualResetEvent(NetworkInterface.GetIsNetworkAvailable());
             NetworkChange.NetworkAvailabilityChanged += NetworkAvailabilityChangeCallback;
 
-            // Hostname and port for the TcpClient
+            // Hostname and port for the HttpClient
             Hostname = hostname;
-            Port = port;
 
-            // Create the cancellation token source for the connection
-            tokenSource = new CancellationTokenSource();
+            // Initialize cache control on Httpclient
+            avr.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue
+            {
+                NoCache = true,
+                NoStore = true
+            };
+            
+            // Initialize uris
+            uriStatus = new UriBuilder("http", hostname, -1, uriStatusPath);
         }
+
+        /// <summary>Get the hostname of the AVR</summary>
+        public string Hostname { get; }
+
+        #region Network availability
+        // Manually reset event to track network availability status
+        private readonly ManualResetEvent networkUp;
+
+        // Signal or unsignal the network availability event when the network availability change
+        private void NetworkAvailabilityChangeCallback(object sender, NetworkAvailabilityEventArgs e)
+        {
+            Log.Debug("Network availability changed: " + e.IsAvailable.ToString());
+            if (e.IsAvailable) networkUp.Set();
+            else networkUp.Reset();
+        }
+        #endregion
+
+        #region Volume Popup
+        // Volume popup with 2 brushes 
+        private VolumePopup volumePopup;
+        private static readonly Brush redBrush = new SolidColorBrush(Color.FromArgb(255, 236, 9, 40));
+        private static readonly Brush greenBrush = new SolidColorBrush(Color.FromArgb(255, 9, 236, 40));
+
+        // 2 seconds timer for volume popup hiding
+        private readonly DispatcherTimer volumePopupHideTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(2000) };
+        // 1.5 seconds timer for volume popup showing
+        private readonly DispatcherTimer volumePopupShowTimer = new DispatcherTimer() { Interval = TimeSpan.FromMilliseconds(1500) };
 
         /// <summary>
         /// Initialize Volume popup after Avr instance creation to allow Volume binding
         /// </summary>
-        public void InitVolume()
+        public async void InitVolume()
         {
             // Initialize volume popup with current volume
-            VolumeGet();
+            try
+            {
+                await UpdateStatusAsync().ConfigureAwait(true);
+            }
+            catch (AvrException err)
+            {
+                Log.Error("Init Volume failed", err);
+            }
             volumePopup = new VolumePopup();
-            volumePopupTimer.Tick += new EventHandler(VolumePopupTimerCallback);
+            volumePopupShowTimer.Tick += new EventHandler(async (object sender, EventArgs e) => {
+                // Stop hiding and showing timer
+                volumePopupShowTimer.Stop();
+                volumePopupHideTimer.Stop();
+                // Update status to get current volume status
+                await UpdateStatusAsync().ConfigureAwait(true);
+                Log.Debug("Volume: " + Volume);
+                // Label in Red if muted
+                volumePopup.LblVolume.Foreground = (avrStatus.Zones[0].Mute == 1) ? redBrush : greenBrush;
+                // Show the popup
+                volumePopup.IsOpen = true;
+                // Start hiding timer after n seconds
+                volumePopupHideTimer.Start();
+            });
+            volumePopupHideTimer.Tick += new EventHandler((object sender, EventArgs e) => {
+                // Stop hiding timer
+                volumePopupHideTimer.Stop();
+                // Hide the popup
+                volumePopup.IsOpen = false;
+            });
         }
 
         // The read-only dependency property key associated to Volume
@@ -97,170 +191,97 @@ namespace Catspaw.Pioneer
         {
             get => Application.Current.Dispatcher.Invoke(new Func<string>(() => 
                 (string)GetValue(VolumeProperty)
-            ));
-            private set => Application.Current.Dispatcher.Invoke(new Action(() => {
-                SetValue(VolumePropertyKey, value);
-            }));
+            ), DispatcherPriority.Send);
+            private set => Application.Current.Dispatcher.Invoke(new Action(() => 
+                SetValue(VolumePropertyKey, value)
+            ), DispatcherPriority.Send);
         }
 
-        /// <summary>Get the hostname of the AVR</summary>
-        public string Hostname { get; }
-        /// <summary>Get the TCP port of the AVR</summary>
-        public int Port { get; }
+        // Convert Volume from int to '[+/-]0.0 dB' format
+        private static string VolumeTodB(double volumeLevel) => 
+            (volumeLevel == 0) ? 
+            "-.- dB" : 
+            ((volumeLevel - 161) / 2).ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " dB";
+        #endregion
 
-        #region Avr network communication
-        // Send a command to avr without processing avr answer
-        private void Send(string command)
+        #region Avr communication
+        // Deserialization options
+        private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
         {
+            AllowTrailingCommas = true,
+        };
+
+        // Avr as an HttpClient with a 1 second timeout
+        private static readonly HttpClient avr = new HttpClient()
+        {
+            Timeout = TimeSpan.FromMilliseconds(1000),
+        };
+        private const string uriStatusPath = "StatusHandler.asp";
+        private const string uriCommandPath = "EventHandler.asp?WebToHostItem=";
+        private readonly UriBuilder uriStatus;
+
+        // Send a command to avr. Never get an answer. Need to check avr status after.
+        private async Task SendAsync(string command)
+        {
+            if (command is null) throw new ArgumentNullException(nameof(command));
+
+            // Wait for network availability event 
+            // and raise exception if not signaled after default timeout
+            Log.Debug("Send: wait for network");
+            if (!networkUp.WaitOne(Settings.Default.AvrNetworkTimeout))
+                throw new AvrException(Resources.ErrorNetworkTimeOutAvr);
+            Log.Debug("Send: network ready");
+
+            // Build Uri
+            UriBuilder uriCommand = new UriBuilder("http", Hostname, -1, uriCommandPath + command);
+
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
             try
             {
-                Connect();
-                Log.Debug("Send command: " + command);
-                avrWriter.WriteLine(command);
+                Log.Debug("Send: " + uriCommand.ToString());
+                HttpResponseMessage response = await avr.GetAsync(uriCommand.Uri).ConfigureAwait(true);
+                response.EnsureSuccessStatusCode();
             }
-            catch (AggregateException e)
+            catch (HttpRequestException e)
             {
-                Log.Debug("Send exception", e);
+                Log.Error(e, "Avr: Http get error");
                 throw new AvrException(Resources.ErrorCommunicationAvr, e);
-            }
-            finally
-            {
-                Disconnect();
             }
         }
 
-        // Execute command on avr and get its response 
-        private string Exec(string command)
+        // Update status of avr
+        private async Task UpdateStatusAsync()
         {
             string response;
+            
+            // Wait for network availability event 
+            // and raise exception if not signaled after default timeout
+            Log.Debug("Update status: wait for network");
+            if (!networkUp.WaitOne(Settings.Default.AvrNetworkTimeout))
+                throw new AvrException(Resources.ErrorNetworkTimeOutAvr);
+            Log.Debug("Update status: network ready");
 
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
             try
             {
-                Connect();
-                Log.Debug("Execute command: " + command);
-                avrWriter.WriteLine(command);
-                response = avrReader.ReadLine();
-                // Get rid of FL response. Data are on second line
-                if (response.Substring(0,2) == "FL")
-                    response = avrReader.ReadLine();
+                Log.Debug("Update status: " + uriStatus.ToString());
+                response = await avr.GetStringAsync(uriStatus.Uri).ConfigureAwait(true);
+                Log.Debug("Update status: " + response);
             }
-            catch (AggregateException e)
+            catch (HttpRequestException e)
             {
-                Log.Debug("Execute exception", e);
+                Log.Error(e, "Avr: Http get error");
                 throw new AvrException(Resources.ErrorCommunicationAvr, e);
             }
-            finally
-            {
-                Disconnect();
-            }
 
-            return response;
-        }
+            // Deserialize json response in avr status
+            avrStatus = JsonSerializer.Deserialize<AvrStatus>(response, jsonOptions);
 
-        // Connect to avr through TcpClient and create writer and reader
-        private void Connect()
-        {
-            var Id = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
-
-            Log.Debug("Create TcpClient " + Id);
-            // Avr is a TcpClient
-            avr = new TcpClient(AddressFamily.InterNetwork);
-
-            try
-            {
-                Log.Debug("Wait for network " + Id);
-                // Wait for network availability event 
-                // and raise exception if not signaled after default timeout
-                if (!networkUp.WaitOne(Settings.Default.AvrNetworkTimeout))
-                    throw new AvrException(Resources.ErrorNetworkTimeOutAvr);
-
-                Log.Debug("Wait for connection " + Id);
-                // Wait for connection to Avr 
-                // and raise exception if not connected after default timeout
-                var token = tokenSource.Token;
-                connection = Task.Run(() =>
-                {
-                    while(!token.IsCancellationRequested && !avr.Connected)
-                    {
-                        try
-                        {
-                            Log.Debug("Connecting to AVR... " + Id);
-                            avr.Connect(Hostname, Port);
-                            Log.Debug("Connected! " + Id);
-                        }
-                        catch (SocketException e)
-                        {
-                            Log.Debug("AVR socket exception during connection " + Id, e);
-                            // Sleep before retrying to connect
-                            Thread.Sleep(500);
-                        }
-                    }
-                }, token);
-                if (!connection.Wait(Settings.Default.AvrNetworkTimeout))
-                {
-                    Log.Debug("Connection wait timeout " + Id);
-                    tokenSource.Cancel();
-                    throw new AvrException(Resources.ErrorNetworkTimeOutAvr);
-                }
-
-                Log.Debug("Create stream, reader & writer " + Id);
-                // Get stream, writer, reader, send command and get response
-                avrStream = avr.GetStream();
-                avrWriter = new StreamWriter(avrStream, Encoding.ASCII, bufferSize: avr.SendBufferSize) { AutoFlush = true };
-                avrReader = new StreamReader(avrStream, Encoding.ASCII, false, avr.ReceiveBufferSize);
-            }
-            catch (AggregateException e)
-            {
-                Log.Debug("Connect exception " + Id, e);
-                throw new AvrException(Resources.ErrorCommunicationAvr, e);
-            }
-        }
-
-        // Close and dispose connection, stream, writer and reader  
-        private void Disconnect()
-        {
-            var Id = Thread.CurrentThread.ManagedThreadId.ToString("G", CultureInfo.InvariantCulture);
-
-            Log.Debug("Disconnect avr " + Id);
-            avrReader?.Close();
-            avrWriter?.Close();
-            avrStream?.Close();
-            avr?.Close();
-        }
-
-        // Signal or unsignal the network availability event when the network availability change
-        private void NetworkAvailabilityChangeCallback(object sender, NetworkAvailabilityEventArgs e)
-        {
-            Log.Debug("Network availability changed: " + e.IsAvailable.ToString());
-            if (e.IsAvailable) networkUp.Set();
-            else networkUp.Reset();
-        }
-
-        // Show and activate the volume popup
-        // Assume that the function is called from the api server thread
-        // Must go through Application dispatcher to access UI thread
-        // Timer is also executed by the application dispatcher
-        private void VolumePopupShow()
-        {
-            if (volumePopup is null) return;
-
-            Application.Current.Dispatcher.Invoke(new Action(() => {
-                // Stop existing timer if running to restart timer count
-                volumePopupTimer.Stop();
-                // Show popup
-                volumePopup.IsOpen = true;
-                // Start timer
-                volumePopupTimer.Start();
-            }));
-        }
-
-        // The callback function called at each timler tick
-        private void VolumePopupTimerCallback(object sender, EventArgs e)
-        {
-            volumePopup.IsOpen = false;
-            volumePopupTimer.Stop();
+            // Convert volume level to dB
+            Volume = (avrStatus.Zones[0].Mute == 1) ? VolumeTodB(0) : VolumeTodB((double)(avrStatus?.Zones[0].VolumeLevel));
         }
         #endregion
+
         #region IDisposable Support
         // Avoid redundant calls
         private bool disposedValue = false;
@@ -276,8 +297,6 @@ namespace Catspaw.Pioneer
                 if (disposing)
                 {
                     Log.Debug("Dispose avr");
-                    Disconnect();
-                    tokenSource.Dispose();
                     networkUp.Close();
                 }
                 disposedValue = true;
